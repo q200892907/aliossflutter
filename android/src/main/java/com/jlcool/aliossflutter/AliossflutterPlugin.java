@@ -27,6 +27,7 @@ import com.alibaba.sdk.android.oss.model.HeadObjectResult;
 import com.alibaba.sdk.android.oss.model.ListObjectsRequest;
 import com.alibaba.sdk.android.oss.model.ListObjectsResult;
 import com.alibaba.sdk.android.oss.model.OSSObjectSummary;
+import com.alibaba.sdk.android.oss.model.ObjectMetadata;
 import com.alibaba.sdk.android.oss.model.PutObjectRequest;
 import com.alibaba.sdk.android.oss.model.PutObjectResult;
 
@@ -270,12 +271,23 @@ public class AliossflutterPlugin implements MethodCallHandler {
         } else {
             final String bucket = call.argument("bucket");
             final String file = call.argument("file");
+            final HashMap<String, String> metaData = call.argument("metaData");
             final String _callbackUrl = call.argument("callbackUrl");
             final String _callbackHost = call.argument("callbackHost");
             final String _callbackBodyType = call.argument("callbackBodyType");
             final String _callbackBody = call.argument("callbackBody");
             final String _callbackVars = call.argument("callbackVars");
-            PutObjectRequest put = new PutObjectRequest(bucket, key, file);
+            ObjectMetadata objectMetadata = new ObjectMetadata();
+            if (metaData != null && metaData.size() > 0) {
+                for (String metaKey : metaData.keySet()) {
+                    if (metaKey.startsWith("x-oss-meta-")) {
+                        objectMetadata.addUserMetadata(key, metaData.get(metaKey));
+                    } else {
+                        objectMetadata.setHeader(metaKey, metaData.get(metaKey));
+                    }
+                }
+            }
+            PutObjectRequest put = new PutObjectRequest(bucket, key, file, objectMetadata);
             put.setProgressCallback(new OSSProgressCallback<PutObjectRequest>() {
                 @Override
                 public void onProgress(PutObjectRequest request, long currentSize, long totalSize) {
@@ -729,19 +741,20 @@ public class AliossflutterPlugin implements MethodCallHandler {
                 @Override
                 public void onSuccess(ListObjectsRequest request, ListObjectsResult result) {
                     final Map<String, Object> objects = new HashMap<>();
-                    List<Map<String, Object>> listObjects=new ArrayList();;
+                    List<Map<String, Object>> listObjects = new ArrayList();
+                    ;
                     objects.put("result", "success");
                     objects.put("id", _id);
                     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                    List<OSSObjectSummary> ossObjects=result.getObjectSummaries();
+                    List<OSSObjectSummary> ossObjects = result.getObjectSummaries();
                     for (int i = 0; i < ossObjects.size(); i++) {
-                        Map<String, Object> m1=new HashMap<>();
-                        m1.put("Key",ossObjects.get(i).getKey());
-                        m1.put("Etag",ossObjects.get(i).getETag());
-                        m1.put("LastModified",sdf.format(ossObjects.get(i).getLastModified()));
+                        Map<String, Object> m1 = new HashMap<>();
+                        m1.put("Key", ossObjects.get(i).getKey());
+                        m1.put("Etag", ossObjects.get(i).getETag());
+                        m1.put("LastModified", sdf.format(ossObjects.get(i).getLastModified()));
 
-                        m1.put("Size",ossObjects.get(i).getSize());
-                        m1.put("Type",ossObjects.get(i).getType());
+                        m1.put("Size", ossObjects.get(i).getSize());
+                        m1.put("Type", ossObjects.get(i).getType());
                         listObjects.add(m1);
                     }
                     objects.put("objects", listObjects);

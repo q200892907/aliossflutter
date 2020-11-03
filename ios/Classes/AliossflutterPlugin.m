@@ -184,6 +184,10 @@ OSSClient *oss ;
                                  };
             [channel invokeMethod:@"onProgress" arguments:m1];
         };
+        NSDictionary *metaData = call.arguments[@"metaData"];
+        if (metaData && metaData.count >0) {
+            put.objectMeta = [NSMutableDictionary dictionaryWithDictionary:metaData];
+        }
         
         // 以下可选字段的含义参考： https://docs.aliyun.com/#/pub/oss/api-reference/object&PutObject
         // put.contentType = @"";
